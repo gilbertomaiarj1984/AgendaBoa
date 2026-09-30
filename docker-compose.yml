@@ -1,0 +1,24 @@
+# Projeto isolado: nome, container, rede e volumes próprios (prefixo agendaboa).
+# Não referencia nenhum recurso de outras aplicações da VPS.
+name: agendaboa
+
+services:
+  app:
+    container_name: agendaboa-app
+    build: .
+    restart: unless-stopped
+    env_file: .env.production        # fica só na VPS, nunca no git
+    # Publicado apenas em loopback; o proxy reverso (quando configurado) aponta para esta porta.
+    ports:
+      - "127.0.0.1:${AGENDABOA_PORT:-3417}:3000"
+    networks: [agendaboa_net]
+    mem_limit: 256m
+    cpus: 0.5
+    read_only: true
+    tmpfs: [/tmp, /app/.next/cache]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+
+networks:
+  agendaboa_net:
+    name: agendaboa_net
