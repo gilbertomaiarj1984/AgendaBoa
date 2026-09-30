@@ -1,0 +1,16 @@
+:root { --primary: #2563eb; --bg: #f8fafc; --fg: #0f172a; --muted: #64748b; --card: #fff; --border: #e2e8f0; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #0f172a; --fg: #f1f5f9; --muted: #94a3b8; --card: #1e293b; --border: #334155; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, sans-serif; background: var(--bg); color: var(--fg); }
+main { max-width: 640px; margin: 0 auto; padding: 16px; }
+button, input { font: inherit; }
+.btn { background: var(--primary); color: #fff; border: 0; border-radius: 8px; padding: 10px 16px; cursor: pointer; }
+.btn.ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px; }
+.row { display: flex; gap: 8px; align-items: center; }
+.center { min-height: 100dvh; display: grid; place-items: center; text-align: center; padding: 16px; }
+input { background: var(--card); color: var(--fg); border: 1px solid var(--border); border-radius: 8px; padding: 10px; }
+ul { list-style: none; padding: 0; display: grid; gap: 8px; }
+.err { color: #dc2626; }
