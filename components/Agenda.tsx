@@ -1,31 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useTransition } from "react";
+import { addEvent, removeEvent, type EventItem } from "@/app/actions";
 
-type Item = { id: string; title: string; date: string; time: string };
-
-// Armazenamento local por usuário (primeira versão). Trocar por banco de dados
-// quando quiser sincronizar entre dispositivos.
-export default function Agenda({ userKey }: { userKey: string }) {
-  const storageKey = `agendaboa:${userKey}`;
-  const [items, setItems] = useState<Item[]>([]);
-  const [loaded, setLoaded] = useState(false);
+export default function Agenda({ initial }: { initial: EventItem[] }) {
+  const [pending, start] = useTransition();
   const [title, setTitle] = useState("");
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [time, setTime] = useState("09:00");
-
-  useEffect(() => {
-    try {
-      setItems(JSON.parse(localStorage.getItem(storageKey) ?? "[]"));
-    } catch {}
-    setLoaded(true);
-  }, [storageKey]);
-
-  useEffect(() => {
-    if (loaded) localStorage.setItem(storageKey, JSON.stringify(items));
-  }, [items, loaded, storageKey]);
-
-  const sorted = [...items].sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
 
   return (
     <>
@@ -35,17 +17,19 @@ export default function Agenda({ userKey }: { userKey: string }) {
         onSubmit={(e) => {
           e.preventDefault();
           if (!title.trim()) return;
-          setItems((s) => [...s, { id: crypto.randomUUID(), title: title.trim(), date, time }]);
-          setTitle("");
+          start(async () => {
+            await addEvent({ title, date, time });
+            setTitle("");
+          });
         }}
       >
         <input style={{ flex: "1 1 100%" }} placeholder="Novo compromisso" value={title} onChange={(e) => setTitle(e.target.value)} />
         <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
         <input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
-        <button className="btn" type="submit">Adicionar</button>
+        <button className="btn" type="submit" disabled={pending}>Adicionar</button>
       </form>
-      <ul>
-        {sorted.map((i) => (
+      <ul style={{ opacity: pending ? 0.6 : 1 }}>
+        {initial.map((i) => (
           <li key={i.id} className="card row" style={{ justifyContent: "space-between" }}>
             <span>
               <strong>{i.title}</strong>
@@ -54,10 +38,10 @@ export default function Agenda({ userKey }: { userKey: string }) {
                 {new Date(`${i.date}T00:00`).toLocaleDateString("pt-BR")} às {i.time}
               </small>
             </span>
-            <button className="btn ghost" onClick={() => setItems((s) => s.filter((x) => x.id !== i.id))}>✕</button>
+            <button className="btn ghost" disabled={pending} onClick={() => start(() => removeEvent(i.id))}>✕</button>
           </li>
         ))}
-        {loaded && sorted.length === 0 && <li style={{ color: "var(--muted)" }}>Nenhum compromisso.</li>}
+        {initial.length === 0 && <li style={{ color: "var(--muted)" }}>Nenhum compromisso.</li>}
       </ul>
     </>
   );

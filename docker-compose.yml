@@ -1,24 +1,31 @@
-# Projeto isolado: nome, container, rede e volumes próprios (prefixo agendaboa).
-# Não referencia nenhum recurso de outras aplicações da VPS.
+# Projeto isolado: nome, container, volumes e env próprios (prefixo agendaboa). Segue o modelo
+# da VPS (leilao-finder-buddy): sem portas publicadas; o Caddy compartilhado alcança o app pela
+# rede externa `proxy`; o Postgres compartilhado é alcançado por uma rede externa DEDICADA
+# (`agendaboa_db`) que só contém este app e o container do Postgres — nunca pela rede interna
+# de outro projeto. Ver infra/README.md para as etapas manuais (rede, banco, Caddy).
 name: agendaboa
 
 services:
   app:
     container_name: agendaboa-app
+    image: ${APP_IMAGE:-agendaboa:latest}
     build: .
     restart: unless-stopped
     env_file: .env.production        # fica só na VPS, nunca no git
-    # Publicado apenas em loopback; o proxy reverso (quando configurado) aponta para esta porta.
-    ports:
-      - "127.0.0.1:${AGENDABOA_PORT:-3417}:3000"
-    networks: [agendaboa_net]
     mem_limit: 256m
     cpus: 0.5
     read_only: true
     tmpfs: [/tmp, /app/.next/cache]
     security_opt: ["no-new-privileges:true"]
     cap_drop: [ALL]
+    networks:
+      proxy:
+        # Alias único: `app` é nome comum e já existe em outros projetos na rede `proxy`.
+        aliases: [agendaboa-app]
+      agendaboa_db: {}
 
 networks:
-  agendaboa_net:
-    name: agendaboa_net
+  proxy:
+    external: true
+  agendaboa_db:
+    external: true

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth, signOut } from "@/auth";
 import Agenda from "@/components/Agenda";
+import { listEvents } from "./actions";
 
 export default async function Home() {
   const session = await auth();
@@ -20,7 +21,7 @@ export default async function Home() {
         </form>
       </header>
       <p style={{ color: "var(--muted)" }}>Olá, {session.user.name ?? session.user.email}</p>
-      <Agenda userKey={session.user.email} />
+      <Agenda initial={await listEvents()} />
     </main>
   );
 }

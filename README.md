@@ -15,16 +15,9 @@ Para liberar/bloquear alguém, edite `ALLOWED_EMAILS` e reinicie/redeploy.
 
 ## Notas
 - A lista é verificada no login (`auth.ts`). A sessão é JWT; remover um e-mail só bloqueia novos logins, sessões ativas valem até expirar.
-- Os compromissos ficam em `localStorage` por enquanto; o próximo passo natural é um banco de dados.
+- Os compromissos ficam no Postgres (tabela `events`, criada automaticamente, filtrada pelo e-mail do usuário logado).
 - O service worker só cacheia assets estáticos; páginas autenticadas nunca vão para o cache.
 
 ## Deploy na VPS (isolado)
-O app roda em Docker com recursos próprios e não toca em outras aplicações da VPS.
-```bash
-mkdir -p ~/apps/agendaboa && cd ~/apps/agendaboa   # pasta exclusiva
-git clone <repo> . && cp .env.example .env.production   # preencha; inclua AUTH_URL=https://seu-dominio e AUTH_TRUST_HOST=true
-docker compose up -d --build                            # só afeta o projeto "agendaboa"
-```
-- Container `agendaboa-app`, rede `agendaboa_net`, porta `127.0.0.1:3417` (mude com `AGENDABOA_PORT` se já estiver em uso).
-- O proxy reverso deve ter um vhost novo só para o AgendaBoa apontando para essa porta. HTTPS é obrigatório para PWA e login Google.
-- Regras de isolamento para as sessões: ver `CLAUDE.md`.
+Segue o modelo de infra da VPS (Caddy compartilhado + Postgres compartilhado com banco/role próprios).
+Passo a passo e decisões manuais em **`infra/README.md`**. Regras de isolamento para as sessões: `CLAUDE.md`.
