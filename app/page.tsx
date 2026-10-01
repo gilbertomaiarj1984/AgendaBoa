@@ -1,27 +1,31 @@
 import { redirect } from "next/navigation";
-import { auth, signOut } from "@/auth";
-import Agenda from "@/components/Agenda";
+import { auth, isAllowedEmail, signOut } from "@/auth";
+import Calendar from "@/components/Calendar";
 import { listEvents } from "./actions";
 
+export const dynamic = "force-dynamic";
+
+const dayKey = (d: Date) => d.toISOString().slice(0, 10);
+const shift = (d: Date, days: number) => new Date(d.getTime() + days * 864e5);
+
 export default async function Home() {
-  const session = await auth();
-  if (!session?.user?.email) redirect("/login");
+  const email = (await auth())?.user?.email?.toLowerCase();
+  if (!email || !isAllowedEmail(email)) redirect("/login");
+
+  // Já entrega os itens de ~4 meses em volta de hoje; o cliente busca mais ao navegar para longe.
+  const now = new Date();
+  const range: [string, string] = [dayKey(shift(now, -45)), dayKey(shift(now, 75))];
+  const res = await listEvents(range[0], range[1]);
 
   return (
-    <main>
-      <header className="row" style={{ justifyContent: "space-between" }}>
-        <h1>AgendaBoa</h1>
-        <form
-          action={async () => {
-            "use server";
-            await signOut({ redirectTo: "/login" });
-          }}
-        >
-          <button className="btn ghost" type="submit">Sair</button>
-        </form>
-      </header>
-      <p style={{ color: "var(--muted)" }}>Olá, {session.user.name ?? session.user.email}</p>
-      <Agenda initial={await listEvents()} />
-    </main>
+    <Calendar
+      initialEvents={res.ok ? res.data : []}
+      initialRange={res.ok ? range : null}
+      email={email}
+      onSignOut={async () => {
+        "use server";
+        await signOut({ redirectTo: "/login" });
+      }}
+    />
   );
 }

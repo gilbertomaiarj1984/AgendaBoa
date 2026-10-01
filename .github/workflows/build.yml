@@ -30,6 +30,7 @@ jobs:
         with:
           context: .
           push: ${{ github.event_name != 'pull_request' }}
+          build-args: GIT_SHA=${{ github.sha }}
           tags: |
             ghcr.io/gilbertomaiarj1984/agendaboa:latest
             ghcr.io/gilbertomaiarj1984/agendaboa:${{ github.sha }}

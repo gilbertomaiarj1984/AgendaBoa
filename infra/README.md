@@ -57,3 +57,9 @@ docker compose exec backup ls -l /backups                     # arquivos
 # restaurar num banco VAZIO do role agendaboa (ex.: após recriar o banco):
 docker compose exec backup sh -c 'gunzip -c /backups/agendaboa-XXXX.sql.gz | psql "$DATABASE_URL"'
 ```
+
+## Migração do esquema (app v0.2.0)
+Não há passo manual: no primeiro acesso depois do deploy, `ensureSchema()` (`lib/db.ts`) acrescenta à tabela `events` as colunas
+`end_time`, `end_date`, `type`, `updated_at`, `updated_by` e cria `event_images`. É aditivo e idempotente; o role `agendaboa`
+é dono das tabelas, então não precisa de privilégio extra. Faça um dump (`infra/backup.sh`) antes do primeiro deploy se quiser um ponto de retorno.
+As fotos ocupam o mesmo banco: o dump diário já as inclui (cada foto tem no máximo 700 KB).

@@ -1,12 +1,12 @@
 import { redirect } from "next/navigation";
-import { auth, signIn } from "@/auth";
+import { auth, isAllowedEmail, signIn } from "@/auth";
 
 export default async function LoginPage({
   searchParams,
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
-  if (await auth()) redirect("/");
+  if (isAllowedEmail((await auth())?.user?.email)) redirect("/");
   const { error } = await searchParams;
 
   return (

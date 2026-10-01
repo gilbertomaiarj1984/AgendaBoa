@@ -10,6 +10,12 @@ function allowedEmails(): Set<string> {
   );
 }
 
+// Também usado nas ações do servidor: remover um e-mail da lista corta o acesso aos dados na hora,
+// mesmo que a sessão (JWT) dele ainda não tenha expirado.
+export function isAllowedEmail(email: string | null | undefined): boolean {
+  return !!email && allowedEmails().has(email.toLowerCase());
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [Google],
   session: { strategy: "jwt" },
