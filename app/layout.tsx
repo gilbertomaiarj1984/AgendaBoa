@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   title: "AgendaBoa",
   description: "Sua agenda pessoal",
   appleWebApp: { capable: true, title: "AgendaBoa", statusBarStyle: "default" },
-  icons: { icon: "/icons/icon.svg", apple: "/icons/icon.svg" },
+  icons: { icon: "/icons/icon.svg", apple: "/icons/apple-touch-icon.png" },
 };
 
 export const viewport: Viewport = { themeColor: "#2563eb" };

@@ -1,0 +1,67 @@
+# Projeto isolado: nome, container, volumes e env próprios (prefixo agendaboa). Segue o modelo
+# da VPS (leilao-finder-buddy): sem portas publicadas; o Caddy compartilhado alcança o app pela
+# rede externa `proxy`; o Postgres compartilhado é alcançado por uma rede externa DEDICADA
+# (`agendaboa_db`) que só contém este app e o container do Postgres — nunca pela rede interna
+# de outro projeto. Ver infra/README.md para as etapas manuais (rede, banco, Caddy).
+name: agendaboa
+
+services:
+  app:
+    container_name: agendaboa-app
+    image: ${APP_IMAGE:-ghcr.io/gilbertomaiarj1984/agendaboa:latest}
+    restart: unless-stopped
+    env_file: .env.production        # fica só na VPS, nunca no git
+    mem_limit: 256m
+    cpus: 0.5
+    read_only: true
+    tmpfs: [/tmp, /app/.next/cache]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    pids_limit: 200
+    # Logs com teto: o disco da VPS é compartilhado com os outros apps.
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000/login"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      proxy:
+        # Alias único: `app` é nome comum e já existe em outros projetos na rede `proxy`.
+        aliases: [agendaboa-app]
+      agendaboa_db: {}
+
+  # Backup diário do banco `agendaboa` (pg_dump -> volume local, retenção de 14 dias).
+  backup:
+    container_name: agendaboa-backup
+    image: postgres:17-alpine
+    restart: unless-stopped
+    env_file: .env.production
+    entrypoint: ["sh", "/backup.sh"]
+    volumes:
+      - ./infra/backup.sh:/backup.sh:ro
+      - backups:/backups
+    mem_limit: 64m
+    cpus: 0.2
+    pids_limit: 50
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+    networks:
+      agendaboa_db: {}
+
+volumes:
+  backups:
+
+networks:
+  proxy:
+    external: true
+  agendaboa_db:
+    external: true

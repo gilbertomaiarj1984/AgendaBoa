@@ -15,5 +15,9 @@ Para liberar/bloquear alguém, edite `ALLOWED_EMAILS` e reinicie/redeploy.
 
 ## Notas
 - A lista é verificada no login (`auth.ts`). A sessão é JWT; remover um e-mail só bloqueia novos logins, sessões ativas valem até expirar.
-- Os compromissos ficam em `localStorage` por enquanto; o próximo passo natural é um banco de dados.
+- Os compromissos ficam no Postgres (tabela `events`, criada automaticamente, filtrada pelo e-mail do usuário logado).
 - O service worker só cacheia assets estáticos; páginas autenticadas nunca vão para o cache.
+
+## Deploy na VPS (isolado)
+Segue o modelo de infra da VPS (Caddy compartilhado + Postgres compartilhado com banco/role próprios).
+Passo a passo e decisões manuais em **`infra/README.md`**. Regras de isolamento para as sessões: `CLAUDE.md`.

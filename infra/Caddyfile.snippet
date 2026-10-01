@@ -1,0 +1,9 @@
+# Bloco a ADICIONAR (por você) ao Caddyfile que já roteia os apps da VPS. É um bloco novo;
+# nenhum existente é editado. Troque o domínio pelo real (sslip.io segue o padrão dos demais).
+agenda.143-95-214-240.sslip.io {
+	reverse_proxy agendaboa-app:3000 {
+		health_uri /login
+		health_interval 10s
+		health_timeout 5s
+	}
+}
