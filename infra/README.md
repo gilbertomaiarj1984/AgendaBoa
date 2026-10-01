@@ -32,3 +32,17 @@ recursos compartilhados (Postgres, Caddy) são **manuais e de decisão do dono d
   no role e `max: 5` no pool limitam o impacto. Uma queda do Postgres derruba os dois.
 - **Superusuário:** o superusuário da instância enxerga todos os bancos; o isolamento entre apps é por
   role/banco, não criptográfico.
+
+## Persistência das ligações (importante)
+O deploy do leilão-finder-buddy copia o `Caddyfile` e o `docker-compose.yml` do repositório dele por cima
+dos da VPS a cada push. Por isso o bloco do AgendaBoa e a rede `agendaboa_db` precisam estar **nesse
+repositório**: `infra/leilao-agendaboa.patch` contém exatamente essas duas mudanças
+(`git apply infra/leilao-agendaboa.patch` na raiz do repo do leilão; é um patch pequeno e revisável).
+Sem ele, depois de um deploy do leilão o AgendaBoa pode ficar fora do ar até repetir os passos manuais.
+
+`bash infra/check.sh` verifica (somente leitura) se as ligações continuam de pé.
+
+## Limites que protegem os outros apps
+- Container: 256 MB, 0,5 CPU, 200 processos, logs com teto de 30 MB.
+- Postgres: role com no máximo 10 conexões, pool de 5, `statement_timeout` de 10 s.
+- Build da imagem só no GitHub Actions; a VPS apenas baixa a imagem.

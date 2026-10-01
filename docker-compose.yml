@@ -17,6 +17,17 @@ services:
     tmpfs: [/tmp, /app/.next/cache]
     security_opt: ["no-new-privileges:true"]
     cap_drop: [ALL]
+    pids_limit: 200
+    # Logs com teto: o disco da VPS é compartilhado com os outros apps.
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000/login"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     networks:
       proxy:
         # Alias único: `app` é nome comum e já existe em outros projetos na rede `proxy`.
