@@ -23,7 +23,7 @@ recursos compartilhados (Postgres, Caddy) são **manuais e de decisão do dono d
 4. **Caddy** — acrescentar o bloco de `infra/Caddyfile.snippet` ao Caddyfile existente e recarregar o Caddy.
 5. **Google OAuth** — novo ID de cliente; redirect URI `https://<dominio>/api/auth/callback/google`.
 6. **Deploy** — pasta exclusiva, `.env.production` (chmod 600) a partir de `.env.example`, então
-   `docker compose up -d --build`. Só afeta o projeto compose `agendaboa`.
+   `docker compose pull && docker compose up -d`. A imagem é buildada no GitHub Actions (`.github/workflows/build.yml`) e publicada no GHCR; a VPS nunca builda. Só afeta o projeto compose `agendaboa`.
 
 ## Pontos de atenção
 - **Backup:** o serviço `backup` do leilao-finder-buddy faz `pg_dump` só do banco dele. O banco
