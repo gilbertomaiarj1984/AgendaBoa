@@ -26,8 +26,10 @@ recursos compartilhados (Postgres, Caddy) são **manuais e de decisão do dono d
    `docker compose pull && docker compose up -d`. A imagem é buildada no GitHub Actions (`.github/workflows/build.yml`) e publicada no GHCR; a VPS nunca builda. Só afeta o projeto compose `agendaboa`.
 
 ## Pontos de atenção
-- **Backup:** o serviço `backup` do leilao-finder-buddy faz `pg_dump` só do banco dele. O banco
-  `agendaboa` **não** está coberto até alguém criar um backup próprio.
+- **Backup:** o serviço `backup` do AgendaBoa (`infra/backup.sh`) faz `pg_dump` só do banco `agendaboa`,
+  1x/dia, para o volume Docker `agendaboa_backups`, com retenção de 14 dias. O backup do leilão-finder-buddy
+  não cobre este banco. Os dumps ficam no MESMO disco da VPS: protegem contra erro de aplicação/dado, não
+  contra perda do servidor — copiar periodicamente para fora (ex.: bucket próprio, nunca o do leilão).
 - **Recursos compartilhados:** a instância Postgres (512 MB) agora atende dois apps; `CONNECTION LIMIT 10`
   no role e `max: 5` no pool limitam o impacto. Uma queda do Postgres derruba os dois.
 - **Superusuário:** o superusuário da instância enxerga todos os bancos; o isolamento entre apps é por
@@ -46,3 +48,12 @@ Sem ele, depois de um deploy do leilão o AgendaBoa pode ficar fora do ar até r
 - Container: 256 MB, 0,5 CPU, 200 processos, logs com teto de 30 MB.
 - Postgres: role com no máximo 10 conexões, pool de 5, `statement_timeout` de 10 s.
 - Build da imagem só no GitHub Actions; a VPS apenas baixa a imagem.
+
+## Backup: operação
+```bash
+cd /opt/agendaboa
+docker compose logs --tail 20 backup                          # último dump
+docker compose exec backup ls -l /backups                     # arquivos
+# restaurar num banco VAZIO do role agendaboa (ex.: após recriar o banco):
+docker compose exec backup sh -c 'gunzip -c /backups/agendaboa-XXXX.sql.gz | psql "$DATABASE_URL"'
+```

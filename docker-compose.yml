@@ -34,6 +34,32 @@ services:
         aliases: [agendaboa-app]
       agendaboa_db: {}
 
+  # Backup diário do banco `agendaboa` (pg_dump -> volume local, retenção de 14 dias).
+  backup:
+    container_name: agendaboa-backup
+    image: postgres:17-alpine
+    restart: unless-stopped
+    env_file: .env.production
+    entrypoint: ["sh", "/backup.sh"]
+    volumes:
+      - ./infra/backup.sh:/backup.sh:ro
+      - backups:/backups
+    mem_limit: 64m
+    cpus: 0.2
+    pids_limit: 50
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+    networks:
+      agendaboa_db: {}
+
+volumes:
+  backups:
+
 networks:
   proxy:
     external: true
