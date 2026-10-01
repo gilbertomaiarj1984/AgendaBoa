@@ -7,6 +7,9 @@ FROM node:22-alpine AS build
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+# Commit exibido no rodapé (build-arg do GitHub Actions); a versão vem do package.json.
+ARG GIT_SHA=local
+ENV GIT_SHA=$GIT_SHA
 # Valores dummy só para o build; os reais entram em runtime via env_file.
 RUN AUTH_SECRET=build AUTH_GOOGLE_ID=build AUTH_GOOGLE_SECRET=build npm run build
 

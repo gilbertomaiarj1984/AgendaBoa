@@ -13,3 +13,8 @@ Este app roda numa VPS compartilhada com outros projetos independentes (pdf-unit
 
 ## Stack
 Next.js 16 + Auth.js v5 (Google), PWA. Login restrito por `ALLOWED_EMAILS` (`auth.ts`).
+
+## Convenções do app
+- Agenda **compartilhada**: `events.owner_email` é quem adicionou (cor do ícone), nunca filtro de visibilidade. Acesso = `isAllowedEmail` (`auth.ts`) em toda ação/rota.
+- Versão = `package.json` (subir no PR de cada mudança). Commit/data do build entram em `next.config.ts` via `GIT_SHA`.
+- Fotos: JPEG comprimido no cliente (`lib/image.ts`), guardado em `event_images`; o servidor valida tipo e tamanho (700 KB).
