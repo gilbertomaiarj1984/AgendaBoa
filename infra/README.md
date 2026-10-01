@@ -25,6 +25,49 @@ recursos compartilhados (Postgres, Caddy) são **manuais e de decisão do dono d
 6. **Deploy** — pasta exclusiva, `.env.production` (chmod 600) a partir de `.env.example`, então
    `docker compose pull && docker compose up -d`. A imagem é buildada no GitHub Actions (`.github/workflows/build.yml`) e publicada no GHCR; a VPS nunca builda. Só afeta o projeto compose `agendaboa`.
 
+## Deploy automático (GitHub Actions → VPS)
+Depois que o PR é mesclado e o build da `main` fica verde, o job `deploy` (`.github/workflows/build.yml`) entra na VPS por SSH,
+roda `docker compose pull && docker compose up -d` na pasta do app e confere se o rodapé do site mostra o commit novo.
+Sem os segredos abaixo o job só avisa que está desligado e termina sem erro. Faça uma vez:
+
+1. **Gerar a chave (exclusiva do deploy)** — no seu computador:
+   ```bash
+   ssh-keygen -t ed25519 -f agendaboa_deploy -N "" -C agendaboa-deploy
+   ```
+   Cria `agendaboa_deploy` (privada, vai para o GitHub) e `agendaboa_deploy.pub` (pública, vai para a VPS).
+2. **Autorizar na VPS, com restrição** — no usuário que roda o compose do AgendaBoa, acrescente UMA linha em `~/.ssh/authorized_keys`
+   (troque o final pelo conteúdo do `agendaboa_deploy.pub`):
+   ```
+   command="cd /opt/agendaboa && docker compose pull && docker compose up -d",restrict ssh-ed25519 AAAA...resto... agendaboa-deploy
+   ```
+   Com `command=` e `restrict`, essa chave só consegue rodar esse comando (nem terminal, nem outros comandos). Isso importa porque
+   quem usa docker na VPS tem poder de root; se a chave vazar, ela não abre a VPS compartilhada com os outros apps.
+3. **Impressão digital do servidor** — para o GitHub só conectar na VPS verdadeira:
+   ```bash
+   ssh-keyscan -t ed25519 IP_OU_DOMINIO_DA_VPS
+   ```
+   Copie a saída inteira (uma linha começando pelo endereço).
+4. **Cadastrar no GitHub** — repositório → *Settings* → *Secrets and variables* → *Actions* → aba **Secrets** → *New repository secret*:
+
+   | Nome | O que colocar |
+   |---|---|
+   | `VPS_HOST` | IP ou domínio da VPS |
+   | `VPS_USER` | usuário SSH da VPS (o do passo 2) |
+   | `VPS_SSH_KEY` | conteúdo completo do arquivo `agendaboa_deploy` (com as linhas `BEGIN`/`END`) |
+   | `VPS_KNOWN_HOSTS` | a saída do `ssh-keyscan` (passo 3) |
+
+   Opcional, na aba **Variables**: `VPS_PORT` (padrão `22`), `VPS_APP_DIR` (padrão `/opt/agendaboa`) e `APP_URL` (padrão o domínio do `.env.example`).
+5. **Apagar a chave privada** do seu computador depois de colá-la no GitHub, e testar em *Actions* → *build* → *Run workflow* (na `main`).
+   O último passo do job deve dizer `No ar: ... mostra o build <commit>`.
+
+Observações:
+- O deploy só atualiza a **imagem**. Mudanças em `docker-compose.yml` ou `infra/` precisam ser copiadas para a VPS (continua sendo passo manual).
+- Se o último passo falhar (o site não mostrou o commit novo em 3 min), o workflow fica vermelho e o GitHub avisa por e-mail. A VPS não volta
+  sozinha para a versão anterior: veja `docker compose logs --tail 50 app` e, se precisar, volte com
+  `APP_IMAGE=ghcr.io/gilbertomaiarj1984/agendaboa:<commit-anterior> docker compose up -d`.
+- Imagens antigas ocupam disco: liste com `docker images ghcr.io/gilbertomaiarj1984/agendaboa` e remova só as deste repositório com `docker image rm`
+  (nunca `docker system prune`, que alcança os outros apps).
+
 ## Pontos de atenção
 - **Backup:** o serviço `backup` do AgendaBoa (`infra/backup.sh`) faz `pg_dump` só do banco `agendaboa`,
   1x/dia, para o volume Docker `agendaboa_backups`, com retenção de 14 dias. O backup do leilão-finder-buddy

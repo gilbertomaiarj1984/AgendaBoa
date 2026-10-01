@@ -18,3 +18,4 @@ Next.js 16 + Auth.js v5 (Google), PWA. Login restrito por `ALLOWED_EMAILS` (`aut
 - Agenda **compartilhada**: `events.owner_email` é quem adicionou (cor do ícone), nunca filtro de visibilidade. Acesso = `isAllowedEmail` (`auth.ts`) em toda ação/rota.
 - Versão = `package.json` (subir no PR de cada mudança). Commit/data do build entram em `next.config.ts` via `GIT_SHA`.
 - Fotos: JPEG comprimido no cliente (`lib/image.ts`), guardado em `event_images`; o servidor valida tipo e tamanho (700 KB).
+- Deploy automático (`deploy` em `.github/workflows/build.yml`): SSH com chave restrita (`command=`) só roda `docker compose pull && up -d` na pasta do AgendaBoa. Nunca ampliar esse comando para além deste projeto compose.
